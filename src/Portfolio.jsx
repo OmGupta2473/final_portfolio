@@ -661,7 +661,7 @@ const pageTransition = {
 function Sidebar() {
   const contacts = [
     { icon: "✉", lbl: "Email", val: "omgupta2473@gmail.com", href: "mailto:omgupta2473@gmail.com" },
-    { icon: "⬇", lbl: "Resume", val: "Download Resume", href: "#" },
+    { icon: "⬇", lbl: "Resume", val: "Download Resume", href: "/OmResume.pdf" },
     { icon: "in", lbl: "LinkedIn", val: "om-gupta-265b80268", href: "https://linkedin.com/in/om-gupta-265b80268" },
     { icon: "gh", lbl: "GitHub", val: "OmGupta2473", href: "https://github.com/OmGupta2473" },
     { icon: "📍", lbl: "Location", val: "India", href: null },
@@ -675,7 +675,7 @@ function Sidebar() {
       transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
     >
       <div className="av-container">
-        <div className="av">👨‍💻</div>
+        <img src="/profile.png" alt="Om Kumar" className="av" style={{ objectFit: "cover" }} />
       </div>
       <div>
         <div className="sb-name">Om Kumar</div>
@@ -700,6 +700,7 @@ function Sidebar() {
           return c.href ? (
             <motion.a
               key={c.lbl} className="contact-link" href={c.href} target="_blank" rel="noreferrer"
+              download={c.lbl === "Resume" ? "OmKumar_Resume.pdf" : undefined}
               whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.08)" }}
               whileTap={{ scale: 0.98 }}
             >
@@ -921,8 +922,38 @@ function CertsTab() {
 
 /* ─── Contact ─── */
 function ContactTab() {
-  const [sent, setSent] = useState(false);
-  const [n, setN] = useState(""); const [e, setE] = useState(""); const [m, setM] = useState("");
+  const [status, setStatus] = useState("idle");
+  const [formData, setFormData] = useState({ name: "", email: "", message: "" });
+  const [errorMsg, setErrorMsg] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.name.trim() || !formData.email.trim() || !formData.message.trim()) {
+      setErrorMsg("Please fill in all fields.");
+      setStatus("error");
+      return;
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setErrorMsg("Please enter a valid email address.");
+      setStatus("error");
+      return;
+    }
+
+    setErrorMsg("");
+    setStatus("loading");
+
+    setTimeout(() => {
+      setStatus("success");
+      setFormData({ name: "", email: "", message: "" });
+    }, 1500);
+  };
+
+  const handleChange = (e) => {
+    setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    if (status === "error") setStatus("idle");
+  };
 
   return (
     <motion.div {...pageTransition}>
@@ -931,27 +962,98 @@ function ContactTab() {
 
       <div className="contact-wrapper">
         <motion.div className="contact-form glass-panel" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }}>
-          {sent ? (
+          {status === "success" ? (
             <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="success-msg">
-              <div style={{ fontSize: 32, marginBottom: 12 }}>✨</div>
-              Message sent successfully!<br />I'll get back to you soon.
+              <div style={{ fontSize: 32, marginBottom: 16 }}>✨</div>
+              <h3 style={{ marginBottom: 8 }}>Message Sent!</h3>
+              <p style={{ color: 'var(--text-secondary)', marginBottom: 24, fontSize: '14px' }}>
+                Thank you for reaching out. I'll get back to you soon.
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="btn-apple"
+                style={{ cursor: 'pointer' }}
+                onClick={() => setStatus("idle")}
+              >
+                Send Another Message
+              </motion.button>
             </motion.div>
           ) : (
-            <>
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div className="form-row">
-                <input className="input-field" placeholder="Full Name" value={n} onChange={x => setN(x.target.value)} />
-                <input className="input-field" placeholder="Email Address" type="email" value={e} onChange={x => setE(x.target.value)} />
+                <input
+                  className="input-field"
+                  placeholder="Full Name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                />
+                <input
+                  className="input-field"
+                  placeholder="Email Address"
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                />
               </div>
-              <textarea className="input-field" placeholder="Your Message" value={m} onChange={x => setM(x.target.value)} />
+              <textarea
+                className="input-field"
+                placeholder="Your Message..."
+                name="message"
+                value={formData.message}
+                onChange={handleChange}
+                rows="5"
+              />
+
+              <AnimatePresence>
+                {status === "error" && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    style={{ color: '#ff6b6b', fontSize: '13px', paddingLeft: '4px' }}
+                  >
+                    {errorMsg}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+                type="submit"
+                whileHover={status !== "loading" ? { scale: 1.02 } : {}}
+                whileTap={status !== "loading" ? { scale: 0.98 } : {}}
                 className="submit-btn"
-                onClick={() => { if (n && e && m) setSent(true); }}
+                disabled={status === "loading"}
+                style={{
+                  opacity: status === "loading" ? 0.7 : 1,
+                  cursor: status === "loading" ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
               >
-                Send Message
+                {status === "loading" ? (
+                  <>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+                      style={{
+                        width: '16px', height: '16px',
+                        border: '2px solid rgba(0,0,0,0.2)',
+                        borderTopColor: '#000',
+                        borderRadius: '50%'
+                      }}
+                    />
+                    <span>Sending...</span>
+                  </>
+                ) : (
+                  "Send Message"
+                )}
               </motion.button>
-            </>
+            </form>
           )}
         </motion.div>
       </div>
